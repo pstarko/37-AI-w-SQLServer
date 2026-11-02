@@ -1,0 +1,179 @@
+/*
+Firma Microsoft wprowadza funkcje wyszukiwania wektorowego w SQL Server 2025, 
+aby sprostać wyzwaniu związanemu z dostosowaniem relacyjnych systemów danych do sztucznej inteligencji.
+*/
+
+/*
+Wraz z premierą SQL Server 2025 oferuje wiele nowych funkcji, w tym możliwości wektorowe. 
+Umożliwia to operacje wektorowe w ramach SQL, semantyczne wyszukiwanie podobieństw wykraczające poza dokładne dopasowania, 
+kontekstową trafność wyszukiwania oraz rekomendacje oparte na sztucznej inteligencji (AI).
+
+Typ danych wektorowych stanowi odpowiedź na następujące wyzwania techniczne i biznesowe:
+
+    Wyszukiwanie semantyczne
+    Integracja procesora języka naturalnego (NLP)
+    Rekomendacje wykorzystujące systemy uczenia maszynowego (ML)
+    Wyszukiwanie podobieństw obrazów lub multimediów
+    Wykrywanie oszustw i anomalii
+    Spersonalizowane wyszukiwanie i doświadczenia użytkownika
+    Identyfikacja powiązanych danych
+    Przykłady z branży
+    E-commerce – rekomendowanie podobnych produktów
+    Prawo – wyszukiwanie podobnych klauzul lub weryfikacja umów
+    Opieka zdrowotna – sugerowanie diagnozy na podstawie podobnych przypadków pacjentów
+    Finanse – identyfikacja oszustw na podstawie zachowań
+*/
+
+
+/*
+VECTORY - Embeddings
+
+Embeddings
+Embeddings to listy liczbowe (wektory), które przechwytują kluczowe cechy czegoś, np. słowa, przedmiotu lub pojęcia. 
+Można je traktować jak cyfrowe odciski palców, które pomagają maszynom rozumieć i porównywać różne rzeczy. 
+Zazwyczaj są one tworzone przez modele głębokiego uczenia się i są niezwykle przydatne, ponieważ mogą pokazać, 
+jak bardzo dwie rzeczy są do siebie podobne, nawet jeśli nie są dokładnie takie same.
+
+Embeddingsy są użyteczne:
+
+    Pomiar podobieństwa: Komputery mogą z łatwością obliczyć matematyczną odległość między wektorami numerycznymi.
+    Zrozumienie semantyczne: Uchwycenie podstawowego znaczenia lub kontekstu elementów.
+    Redukcja wymiarowości: Przekształcanie złożonych danych wielowymiarowych w gęstsze i stałe rozmiary reprezentacji numerycznych, 
+                            łatwiejsze do przetworzenia przez algorytmy.
+    Wydajność: wyszukiwanie podobieństw staje się szybką operacją matematyczną na wektorach.
+*/
+
+
+/*
+Wyszukiwanie dokładne:
+
+Znane również jako wyszukiwanie k-NN, co jest skrótem od k-najbliższych sąsiadów, 
+wyszukiwanie dokładne polega na znalezieniu elementów najbardziej podobnych do czegoś innego. 
+Bierzesz jeden wektor, na przykład punkt w przestrzeni, aby zmierzyć, jak daleko znajduje się on od wszystkich pozostałych, 
+sortujesz je według odległości i wybierasz te najbliższe.
+
+Wektory:
+Wektory to uporządkowane tablice liczb, które mogą reprezentować informacje o danych wyrażonych przez wielkość i kierunek.
+
+Vector - typ danych:
+Typ danych wektorowych został zaprojektowany do przechowywania wektorów, aby zapewnić wydajność wyszukiwania podobnych elementów 
+lub wykonywania zadań uczenia maszynowego. Został stworzony, aby szybko i płynnie obsługiwać tego rodzaju operacje. 
+Obsługuje co najmniej jeden do 1998 wymiarów, jest eksponowany jako varchar(MAX), może być obsługiwany przez klientów jako tablica JSON 
+i jest obsługiwany w wersji 21 programu SSMS.
+
+Typ danych wektorowych w SQL Server 2025 ma kilka ograniczeń: 
+    nie obsługuje CONSTRAINTS, indeksowania, operacji matematycznych ani konwersji poza tekstem/JSON 
+    i nie może być używany w funkcjach takich jak Memory-optymized tables, Always Encrypted lub Ledger Verification. 
+
+Jest przeznaczony głównie do wyszukiwania podobieństw, a nie do ogólnej manipulacji danymi.
+*/
+
+/*
+Definicje: 
+Vector distance:
+    Aby sprawdzić, jak blisko siebie znajdują się dwa wektory, należy użyć specjalnej funkcji, która oblicza odległość między nimi. 
+
+
+Funkcje wektorowe
+    Funkcje te działają z wektorami przechowywanymi w formacie binarnym, umożliwiając aplikacjom zapisywanie ich i 
+    manipulowanie nimi w silniku bazy danych SQL.
+
+Wyszukiwanie wektorowe
+    Jest to proces analizowania wielu wektorów w celu znalezienia tych, które są najbardziej podobne do konkretnego wektora, 
+    który Cię interesuje.
+
+Wektoryzacja
+    Proces przekształcania tekstu, obrazów lub innych informacji na liczby, aby algorytmy mogły zrozumieć dane i pracować z nimi.
+
+*/
+
+
+DECLARE @v1 VECTOR(3) = '[1.0, -0.2, 30]';
+-- or
+DECLARE @v1 VECTOR(3) = JSON_ARRAY(1.0, -0.2, 30);
+
+/*
+Funkcja odległości wektorowej
+Aby określić, jak daleko od siebie znajdują się dwa wektory, możemy użyć metryki odległości, 
+metody lub wzoru do pomiaru różnicy między nimi.
+
+Składnia TSQL: 
+VECTOR_DISTANCE (distance_metric, vector1, vector2), gdzie distance_metric może być:
+
+    Cosinus: mierzy cosinus kąta między dwoma wektorami. Jest to miara orientacji, a nie wielkości. 
+                Oblicza się ją jako iloczyn skalarny wektorów podzielony przez iloczyn ich długości.
+    Euklidesowa: uzyskuje się ją jako pierwiastek kwadratowy z sumy (Ai-Bi) do kwadratu.
+    Skalarna: ujemny iloczyn skalarny oblicza się jako ujemny wynik sumy (Ai * Bi).
+*/
+
+
+DECLARE @A VECTOR(2) = '[1,1]';
+DECLARE @B VECTOR(2) = '[-1,-1]';
+ 
+SELECT   
+		--mierzy odległość w linii prostej (0 oznacza identyczne wektory, a im wyższa wartość, tym są one "dalej" od siebie.)
+		VECTOR_DISTANCE('euclidean', @A, @B) AS euclidean
+		--Bierze pod uwagę tylko kąt między wektorami. Nawet jeśli jeden wektor jest 10 razy "dłuższy" (ma większe wartości) od drugiego, 
+		--ich podobieństwo cosinusowe będzie wynosić 1 (identyczne), jeśli wskazują ten sam kierunek.
+        ,VECTOR_DISTANCE('cosine', @A, @B) AS cosine
+		--iloczyn skalarny (dot skupia się na tym, jak bardzo dwa wektory są ze sobą "zsynchronizowane" pod kątem kierunku i długości.)
+		/*W przypadku dot:
+		
+			Im wyższa wartość (bardziej dodatnia), tym wektory są bardziej podobne (mają zbliżony kierunek).
+			Wartość 0 oznacza, że wektory są prostopadłe (nie mają ze sobą nic wspólnego).
+			Wartości ujemne oznaczają, że wektory mają przeciwne kierunki.
+		*/
+        ,VECTOR_DISTANCE('dot', @A, @B) AS negative_dot_product; 
+
+/*
+Funkcja właściwości wektora:
+Ta funkcja zwraca określone właściwości danego wektora.
+
+Składnia TSQL: VECTORPROPERTY(wektor, właściwość) gdzie właściwość może być:
+
+Wymiarem: Zwraca liczbę wymiarów wektora jako wartość całkowitą z liczbą wymiarów.
+Typ bazowy: Zwraca typ bazowy wektora jako sysname z nazwą typu danych.
+*/
+
+DECLARE @v AS VECTOR(3) = '[1,2,3]';
+ 
+SELECT   VECTORPROPERTY(@v, 'Dimensions')
+        ,VECTORPROPERTY(@v, 'BaseType');
+
+/*
+Funkcja wyszukiwania wektorów:
+
+Znajduje wektory najbliższe danemu wektorowi, wykorzystując algorytm wyszukiwania przybliżonego. 
+Oznacza to, że nie sprawdza każdego z nich, a jedynie tyle, ile potrzeba, aby uzyskać szybki i dość dokładny wynik przy 
+użyciu wybranej miary odległości.
+*/
+
+--Przykład
+DECLARE      @Products
+    TABLE   (ProductId int
+            ,ProductName nvarchar(120)
+            ,Embedding vector(3));
+ 
+-- Embeddings wartosci dla: charakter koszuli, kolorystyka, odzież codzienna
+INSERT INTO  @Products
+    VALUES   (101,'Blue T-Shirt',        '[0.10, 0.50, 0.90]')
+            ,(102,'Red T-Shirt',         '[0.20, 0.40, 0.80]')
+            ,(103,'Green Polo Shirt',    '[0.30, 0.60, 0.70]')
+            ,(104,'Blue Jeans',          '[0.80, 0.10, 0.20]')
+            ,(105,'Denim Jacket',        '[0.70, 0.20, 0.30]')
+            ,(106,'Striped Blue T-Shirt','[0.15, 0.55, 0.92]');
+ 
+DECLARE @queryProductEmbedding VECTOR(3);
+ 
+--- Porównanie, które z nich są podobne do niebieskiej koszulki (101) =========
+SELECT       @queryProductEmbedding = Embedding
+    FROM     @Products
+    WHERE    ProductId = 101;
+ 
+SELECT TOP 3 p.ProductId
+            ,p.ProductName
+            ,VECTOR_DISTANCE('cosine', @queryProductEmbedding, p.Embedding) AS CosineSimilarityDistance
+    FROM     @Products AS p
+    WHERE    p.ProductId <> 101 
+    ORDER BY CosineSimilarityDistance ;
+	
