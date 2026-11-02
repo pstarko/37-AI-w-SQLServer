@@ -34,4 +34,4 @@ Przed szkoleniem zainstaluj:
 
 
 ```bash
-git clone https://github.com/pstarko/30-SQL-Server-analiza-SII.git
+git clone https://github.com/pstarko/37-AI-w-SQLServer.git
