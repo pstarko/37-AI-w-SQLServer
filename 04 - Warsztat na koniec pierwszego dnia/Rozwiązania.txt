@@ -1,0 +1,32 @@
+--1.1
+EXEC sp_execute_external_script
+     @language     = N'Python',
+     @script       = N'OutputDataSet = InputDataSet',
+     @input_data_1 = N'SELECT ZgloszenieID, Tresc FROM BOK.Zgloszenia'
+WITH RESULT SETS ((ZgloszenieID INT, Tresc NVARCHAR(2000)));
+
+
+
+--1.2
+EXEC sp_execute_external_script
+     @language     = N'Python',
+     @script       = N'
+import re
+ 
+WZ_EMAIL   = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
+WZ_PESEL   = re.compile(r"(?<!\d)\d{11}(?!\d)")
+WZ_TELEFON = re.compile(r"(?<!\d)(?:\+48[\s-]?)?\d{3}[\s-]?\d{3}[\s-]?\d{3}(?!\d)")
+ 
+def maskuj(tekst):
+    licznik = 0
+    for wzorzec, znacznik in [(WZ_EMAIL, "[EMAIL]"), (WZ_PESEL, "[PESEL]"), (WZ_TELEFON, "[TELEFON]")]:
+        tekst, n = wzorzec.subn(znacznik, tekst)
+        licznik += n
+    return tekst, licznik
+ 
+df = InputDataSet.copy()
+df["TrescCzysta"] = df["Tresc"].apply(lambda t: maskuj(t)[0])
+OutputDataSet = df[["ZgloszenieID", "TrescCzysta"]]
+',
+     @input_data_1 = N'SELECT ZgloszenieID, Tresc FROM BOK.Zgloszenia'
+WITH RESULT SETS ((ZgloszenieID INT, TrescCzysta NVARCHAR(2000)));
