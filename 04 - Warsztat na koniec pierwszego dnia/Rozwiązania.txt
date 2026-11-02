@@ -101,3 +101,28 @@ SELECT @ret                                                         AS KodPowrot
        JSON_VALUE(@response, '$.response.status.http.code')         AS KodHTTP,          -- 200
        @response                                                    AS PelnaOdpowiedz;
 
+
+
+--3.1
+
+CREATE TABLE BOK.ProduktyWektory
+(
+    ProductModelID INT            NOT NULL CONSTRAINT PK_ProduktyWektory PRIMARY KEY,
+    Nazwa          NVARCHAR(50)   NOT NULL,
+    Opis           NVARCHAR(400)  NOT NULL,
+    Wektor         VECTOR(1536)   NOT NULL
+);
+GO
+INSERT INTO BOK.ProduktyWektory (ProductModelID, Nazwa, Opis, Wektor)
+SELECT pm.ProductModelID,
+       pm.Name,
+       pd.Description,
+       AI_GENERATE_EMBEDDINGS(CONCAT(pm.Name, N': ', pd.Description) USE MODEL EmbeddingiOpenAI)
+FROM Production.ProductModel AS pm
+JOIN Production.ProductModelProductDescriptionCulture AS pmc
+     ON pmc.ProductModelID = pm.ProductModelID
+    AND pmc.CultureID = N'en'
+JOIN Production.ProductDescription AS pd
+     ON pd.ProductDescriptionID = pmc.ProductDescriptionID;
+ 
+SELECT COUNT(*) AS LiczbaProduktow FROM BOK.ProduktyWektory;
