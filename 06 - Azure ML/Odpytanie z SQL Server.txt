@@ -1,0 +1,35 @@
+CREATE MASTER KEY ENCRYPTION BY PASSWORD = N'P@ssw0rd1234!';
+
+
+CREATE DATABASE SCOPED CREDENTIAL [https://ws-fitpoint-ps.polandcentral.inference.ml.azure.com/score]
+WITH IDENTITY = 'HTTPEndpointHeaders',
+     SECRET   = '{"Authorization":"Bearer "}';
+GO
+
+EXECUTE sp_configure 'external rest endpoint enabled', 1;
+RECONFIGURE WITH OVERRIDE;
+
+
+
+DECLARE @ret INT, @response NVARCHAR(MAX);
+DECLARE @payload NVARCHAR(MAX) = N'{
+  "input_data": {
+    "columns": ["StazMiesiace","WizytyMiesiecznie","DniOdOstatniejWizyty","TypKarnetu",
+                "OplataMiesieczna","ZajeciaGrupowe","LiczbaReklamacji","Wiek"],
+    "index": [0],
+    "data": [[2, 1, 48, "Student", 89.00, "Nie", 2, 21]]
+  }
+}';
+
+EXEC @ret = sp_invoke_external_rest_endpoint
+    @url        = N'https://ws-fitpoint-ps.polandcentral.inference.ml.azure.com/score',
+    @method     = 'POST',
+    @headers    = '{"Content-Type":"application/json"}',
+    @payload    = @payload,
+    @credential = [https://ws-fitpoint-ps.polandcentral.inference.ml.azure.com/score],
+    @response   = @response OUTPUT;
+
+SELECT @ret                                                 AS KodPowrotu,
+       JSON_VALUE(@response, '$.response.status.http.code') AS KodHTTP,
+       JSON_QUERY(@response, '$.result')                    AS WynikModelu,
+       @response    
